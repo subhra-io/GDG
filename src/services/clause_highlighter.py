@@ -1,9 +1,10 @@
 """Service for highlighting and locating policy clauses."""
 
 from typing import Dict, Any, List, Optional
+from pathlib import Path
 from sqlalchemy.orm import Session
 
-from src.models.policy_document import PolicyDocument
+from src.models.policy import PolicyDocument
 from src.services.pdf_extractor import PDFExtractor
 from src.core.logging import get_logger
 
@@ -50,13 +51,39 @@ class ClauseHighlighter:
                 logger.warning("Policy not found", policy_id=policy_id)
                 return None
             
-            if not policy.file_path:
-                logger.warning("Policy has no file path", policy_id=policy_id)
+            if not policy.extracted_text:
+                logger.warning("Policy has no extracted text", policy_id=policy_id)
                 return None
             
-            # Extract text with page numbers
-            extraction_result = self.pdf_extractor.extract_text(policy.file_path)
-            pages = extraction_result.get("pages", [])
+            # Parse the extracted text to find pages
+            pages = []
+            current_page = None
+            current_text = []
+            
+            for line in policy.extracted_text.split('\n'):
+                if line.startswith('[Page ') and line.endswith(']'):
+                    # Save previous page
+                    if current_page is not None:
+                        pages.append({
+                            "page_number": current_page,
+                            "text": '\n'.join(current_text).strip()
+                        })
+                    # Start new page
+                    try:
+                        current_page = int(line[6:-1])
+                        current_text = []
+                    except ValueError:
+                        continue
+                else:
+                    if current_page is not None:
+                        current_text.append(line)
+            
+            # Save last page
+            if current_page is not None:
+                pages.append({
+                    "page_number": current_page,
+                    "text": '\n'.join(current_text).strip()
+                })
             
             # Search for clause in pages
             clause_lower = clause_text.lower().strip()
@@ -124,12 +151,45 @@ class ClauseHighlighter:
                 PolicyDocument.id == policy_id
             ).first()
             
-            if not policy or not policy.file_path:
+            if not policy:
+                logger.warning("Policy not found", policy_id=policy_id)
                 return None
             
-            # Extract text with page numbers
-            extraction_result = self.pdf_extractor.extract_text(policy.file_path)
-            pages = extraction_result.get("pages", [])
+            # Use extracted_text which is already stored
+            if not policy.extracted_text:
+                logger.warning("Policy has no extracted text", policy_id=policy_id)
+                return None
+            
+            # Parse the extracted text to find the page
+            # Format is: [Page X]\ntext\n\n[Page Y]\ntext...
+            pages = []
+            current_page = None
+            current_text = []
+            
+            for line in policy.extracted_text.split('\n'):
+                if line.startswith('[Page ') and line.endswith(']'):
+                    # Save previous page
+                    if current_page is not None:
+                        pages.append({
+                            "page_number": current_page,
+                            "text": '\n'.join(current_text).strip()
+                        })
+                    # Start new page
+                    try:
+                        current_page = int(line[6:-1])
+                        current_text = []
+                    except ValueError:
+                        continue
+                else:
+                    if current_page is not None:
+                        current_text.append(line)
+            
+            # Save last page
+            if current_page is not None:
+                pages.append({
+                    "page_number": current_page,
+                    "text": '\n'.join(current_text).strip()
+                })
             
             # Find the requested page
             for page in pages:
@@ -137,7 +197,7 @@ class ClauseHighlighter:
                     return {
                         "page_number": page_number,
                         "text": page["text"],
-                        "total_pages": extraction_result["metadata"]["total_pages"]
+                        "total_pages": len(pages)
                     }
             
             logger.warning(
