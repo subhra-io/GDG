@@ -381,3 +381,59 @@ async def update_policy(
     except Exception as e:
         logger.error("Policy update failed", error=str(e), policy_id=policy_id)
         raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
+
+
+@router.get("/{policy_id}/page/{page_number}")
+def get_policy_page(
+    policy_id: str,
+    page_number: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get specific page from policy document.
+    
+    Args:
+        policy_id: Policy document ID
+        page_number: Page number (1-indexed)
+        db: Database session
+        
+    Returns:
+        Page text and metadata
+    """
+    from src.services.clause_highlighter import ClauseHighlighter
+    
+    highlighter = ClauseHighlighter(db)
+    page_data = highlighter.get_page_text(policy_id, page_number)
+    
+    if not page_data:
+        raise HTTPException(status_code=404, detail="Page not found")
+    
+    return page_data
+
+
+@router.post("/{policy_id}/search-clause")
+def search_clause(
+    policy_id: str,
+    clause_text: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Search for a clause in policy document.
+    
+    Args:
+        policy_id: Policy document ID
+        clause_text: Text to search for
+        db: Database session
+        
+    Returns:
+        Clause location and context
+    """
+    from src.services.clause_highlighter import ClauseHighlighter
+    
+    highlighter = ClauseHighlighter(db)
+    location = highlighter.find_clause_location(policy_id, clause_text)
+    
+    if not location:
+        raise HTTPException(status_code=404, detail="Clause not found")
+    
+    return location

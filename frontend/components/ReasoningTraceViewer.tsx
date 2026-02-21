@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import ClauseViewer from "./ClauseViewer";
+import { jsPDF } from "jspdf";
 
 interface PolicyReference {
   clause: string;
@@ -26,12 +28,18 @@ interface ReasoningTrace {
 
 interface ReasoningTraceViewerProps {
   violationId: string;
+  policyId?: string;
 }
 
-export default function ReasoningTraceViewer({ violationId }: ReasoningTraceViewerProps) {
+export default function ReasoningTraceViewer({ violationId, policyId }: ReasoningTraceViewerProps) {
   const [trace, setTrace] = useState<ReasoningTrace | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedClause, setSelectedClause] = useState<{
+    policyId: string;
+    pageNumber: number;
+    clauseText: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchReasoningTrace();
@@ -85,6 +93,80 @@ export default function ReasoningTraceViewer({ violationId }: ReasoningTraceView
     }
   };
 
+  const exportToPdf = () => {
+    if (!trace) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const maxWidth = pageWidth - 2 * margin;
+    let yPos = 20;
+
+    // Title
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("AI Reasoning Trace Report", margin, yPos);
+    yPos += 10;
+
+    // Metadata
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Violation ID: ${violationId}`, margin, yPos);
+    yPos += 6;
+    doc.text(`Generated: ${new Date(trace.created_at).toLocaleString()}`, margin, yPos);
+    yPos += 15;
+
+    // Steps
+    trace.steps.forEach((step, index) => {
+      // Check if we need a new page
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Step header
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Step ${step.step_number}: ${step.outcome.toUpperCase()}`, margin, yPos);
+      yPos += 7;
+
+      // Description
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      const descLines = doc.splitTextToSize(step.description, maxWidth);
+      doc.text(descLines, margin, yPos);
+      yPos += descLines.length * 5 + 3;
+
+      // Confidence
+      doc.text(`Confidence: ${step.confidence_score}%`, margin, yPos);
+      yPos += 7;
+
+      // Policy references
+      if (step.policy_references && step.policy_references.length > 0) {
+        doc.setFont("helvetica", "bold");
+        doc.text("Policy References:", margin, yPos);
+        yPos += 5;
+        doc.setFont("helvetica", "normal");
+
+        step.policy_references.forEach((ref) => {
+          if (yPos > 270) {
+            doc.addPage();
+            yPos = 20;
+          }
+          const refText = `• "${ref.clause}" (${ref.document_name}, Page ${ref.page})`;
+          const refLines = doc.splitTextToSize(refText, maxWidth - 5);
+          doc.text(refLines, margin + 5, yPos);
+          yPos += refLines.length * 5;
+        });
+      }
+
+      yPos += 10;
+    });
+
+    // Save
+    doc.save(`reasoning-trace-${violationId}.pdf`);
+  };
+
   const getOutcomeColor = (outcome: string) => {
     switch (outcome) {
       case "pass":
@@ -127,12 +209,20 @@ export default function ReasoningTraceViewer({ violationId }: ReasoningTraceView
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">AI Reasoning Trace</h3>
-        <button
-          onClick={handleExport}
-          className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
-        >
-          Export as Text
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExport}
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Export as Text
+          </button>
+          <button
+            onClick={exportToPdf}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          >
+            Export as PDF
+          </button>
+        </div>
       </div>
 
       <div className="relative">
@@ -195,14 +285,28 @@ export default function ReasoningTraceViewer({ violationId }: ReasoningTraceView
                 {/* Policy references */}
                 {step.policy_references && step.policy_references.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-gray-700 mb-1">Policy References:</p>
+                    <p className="text-xs font-medium text-gray-700 mb-1">📄 Policy References:</p>
                     <div className="space-y-1">
                       {step.policy_references.map((ref, idx) => (
-                        <div key={idx} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                          <p className="font-medium">{ref.clause}</p>
-                          <p className="text-gray-500">
-                            {ref.document_name} - Page {ref.page}
-                          </p>
+                        <div key={idx} className="text-xs bg-blue-50 border border-blue-200 p-2 rounded">
+                          <p className="font-medium text-blue-900 mb-1">"{ref.clause}"</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-blue-700">
+                              {ref.document_name} - Page {ref.page}
+                            </p>
+                            {policyId && (
+                              <button
+                                onClick={() => setSelectedClause({
+                                  policyId,
+                                  pageNumber: ref.page,
+                                  clauseText: ref.clause
+                                })}
+                                className="text-xs text-blue-600 hover:text-blue-800 underline font-medium"
+                              >
+                                View in Document →
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -217,6 +321,16 @@ export default function ReasoningTraceViewer({ violationId }: ReasoningTraceView
       <div className="text-xs text-gray-500 text-center pt-4">
         Generated on {new Date(trace.created_at).toLocaleString()}
       </div>
+
+      {/* Clause Viewer Modal */}
+      {selectedClause && (
+        <ClauseViewer
+          policyId={selectedClause.policyId}
+          pageNumber={selectedClause.pageNumber}
+          clauseText={selectedClause.clauseText}
+          onClose={() => setSelectedClause(null)}
+        />
+      )}
     </div>
   );
 }
