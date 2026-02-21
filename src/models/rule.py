@@ -34,8 +34,13 @@ class ComplianceRule(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Rule graph fields
+    parent_rule_id = Column(UUID(as_uuid=True), ForeignKey("compliance_rules.id"), nullable=True)
+    precedence = Column(String(10), default="0", nullable=True)
+    
     # Relationships
     mappings = relationship("RuleMapping", back_populates="rule", cascade="all, delete-orphan")
+    child_rules = relationship("ComplianceRule", backref="parent_rule", remote_side=[id])
     
     def __repr__(self):
         return f"<ComplianceRule(id={self.id}, severity={self.severity}, active={self.is_active})>"

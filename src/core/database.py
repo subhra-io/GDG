@@ -173,3 +173,36 @@ class DatabaseManager:
 
 # Global database manager instance
 db_manager = DatabaseManager()
+
+
+# FastAPI dependency for database sessions
+def get_db() -> Session:
+    """
+    FastAPI dependency that provides a database session.
+    Automatically handles session lifecycle.
+    """
+    session = db_manager.get_postgres_session()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def get_db_session() -> Session:
+    """
+    Get a database session for use in background tasks.
+    Returns a generator that yields a session.
+    """
+    session = db_manager.get_postgres_session()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

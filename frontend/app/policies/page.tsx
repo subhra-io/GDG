@@ -284,6 +284,15 @@ export default function PoliciesPage() {
                         View Details
                       </Link>
 
+                      {policy.rules_count > 0 && (
+                        <Link
+                          href={`/policies/${policy.id}/graph`}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 text-center"
+                        >
+                          View Rule Graph
+                        </Link>
+                      )}
+
                       <button
                         onClick={() => {
                           setEditingPolicy(policy.id);
