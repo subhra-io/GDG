@@ -32,12 +32,12 @@ async def get_dashboard_metrics(db: Session = Depends(get_db)):
     Returns:
         Dashboard metrics
     """
-    # Total violations
+    # Total violations (all)
     total_violations = db.query(Violation).count()
     
-    # Active violations (pending or confirmed)
+    # Active violations (not resolved)
     active_violations = db.query(Violation).filter(
-        Violation.status.in_(["pending_review", "confirmed"])
+        Violation.status != "resolved"
     ).count()
     
     # Total rules
@@ -48,38 +48,64 @@ async def get_dashboard_metrics(db: Session = Depends(get_db)):
     # Total records
     total_records = db.query(CompanyRecord).count()
     
-    # Calculate risk score efficiently using aggregation
-    violation_detector = ViolationDetector()
+    # Calculate compliance score based on ACTIVE (non-resolved) violations only
+    # Use a more reasonable penalty scale for better scores
+    if active_violations == 0:
+        compliance_score = 100
+    else:
+        # Get severity counts for active violations only
+        severity_counts = {
+            "critical": db.query(Violation).filter(
+                Violation.severity == "critical",
+                Violation.status != "resolved"
+            ).count(),
+            "high": db.query(Violation).filter(
+                Violation.severity == "high",
+                Violation.status != "resolved"
+            ).count(),
+            "medium": db.query(Violation).filter(
+                Violation.severity == "medium",
+                Violation.status != "resolved"
+            ).count(),
+            "low": db.query(Violation).filter(
+                Violation.severity == "low",
+                Violation.status != "resolved"
+            ).count()
+        }
+        
+        # Calculate penalty with adjusted scale (less harsh)
+        # Critical: 5 points each, High: 2 points, Medium: 1 point, Low: 0.5 points
+        penalty = (
+            severity_counts["critical"] * 5 +
+            severity_counts["high"] * 2 +
+            severity_counts["medium"] * 1 +
+            severity_counts["low"] * 0.5
+        )
+        
+        # Calculate score (minimum 0, maximum 100)
+        # Use a logarithmic scale for better distribution
+        if penalty <= 50:
+            compliance_score = int(100 - penalty)
+        else:
+            # For high penalties, use logarithmic decay
+            compliance_score = int(50 * (1 - (penalty - 50) / (penalty + 50)))
+        
+        compliance_score = max(0, min(100, compliance_score))
     
-    # Get severity counts directly from database
-    severity_counts = {}
-    for severity in ["critical", "high", "medium", "low"]:
-        count = db.query(Violation).filter(
-            Violation.severity == severity
-        ).count()
-        severity_counts[severity] = count
-    
-    # Calculate risk score from counts
-    violations_data = []
-    for severity, count in severity_counts.items():
-        violations_data.extend([{"severity": severity}] * count)
-    
-    risk_score = violation_detector.calculate_risk_score(violations_data)
-    
-    # Violations by severity
-    violations_by_severity = {}
-    for severity in ["critical", "high", "medium", "low"]:
-        count = db.query(Violation).filter(
-            Violation.severity == severity
-        ).count()
-        violations_by_severity[severity] = count
+    # Violations by severity (all violations, not just active)
+    violations_by_severity = {
+        "critical": db.query(Violation).filter(Violation.severity == "critical").count(),
+        "high": db.query(Violation).filter(Violation.severity == "high").count(),
+        "medium": db.query(Violation).filter(Violation.severity == "medium").count(),
+        "low": db.query(Violation).filter(Violation.severity == "low").count()
+    }
     
     return {
         "total_violations": total_violations,
         "active_violations": active_violations,
         "total_rules": total_rules,
         "total_records": total_records,
-        "compliance_score": risk_score,
+        "compliance_score": compliance_score,
         "violations_by_severity": violations_by_severity
     }
 
@@ -95,28 +121,47 @@ async def get_risk_score(db: Session = Depends(get_db)):
     Returns:
         Risk score and breakdown
     """
-    # Count by severity efficiently
+    # Count by severity efficiently (only non-resolved)
     severity_breakdown = {
-        "critical": 0,
-        "high": 0,
-        "medium": 0,
-        "low": 0
-    }
-    
-    for severity in severity_breakdown.keys():
-        severity_breakdown[severity] = db.query(Violation).filter(
-            Violation.severity == severity
+        "critical": db.query(Violation).filter(
+            Violation.severity == "critical",
+            Violation.status != "resolved"
+        ).count(),
+        "high": db.query(Violation).filter(
+            Violation.severity == "high",
+            Violation.status != "resolved"
+        ).count(),
+        "medium": db.query(Violation).filter(
+            Violation.severity == "medium",
+            Violation.status != "resolved"
+        ).count(),
+        "low": db.query(Violation).filter(
+            Violation.severity == "low",
+            Violation.status != "resolved"
         ).count()
+    }
     
     total_violations = sum(severity_breakdown.values())
     
-    # Calculate risk score from counts
-    violation_detector = ViolationDetector()
-    violations_data = []
-    for severity, count in severity_breakdown.items():
-        violations_data.extend([{"severity": severity}] * count)
-    
-    score = violation_detector.calculate_risk_score(violations_data)
+    # Calculate compliance score with adjusted scale
+    if total_violations == 0:
+        score = 100
+    else:
+        # Calculate penalty with adjusted scale
+        penalty = (
+            severity_breakdown["critical"] * 5 +
+            severity_breakdown["high"] * 2 +
+            severity_breakdown["medium"] * 1 +
+            severity_breakdown["low"] * 0.5
+        )
+        
+        # Calculate score with logarithmic scale for better distribution
+        if penalty <= 50:
+            score = int(100 - penalty)
+        else:
+            score = int(50 * (1 - (penalty - 50) / (penalty + 50)))
+        
+        score = max(0, min(100, score))
     
     return {
         "score": score,

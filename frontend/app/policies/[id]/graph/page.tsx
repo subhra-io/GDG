@@ -1,12 +1,15 @@
 'use client';
 
-import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import RuleGraphViewer from '@/components/RuleGraphViewer';
 
-export default function RuleGraphPage({ params }: { params: Promise<{ id: string }> }) {
+interface PageProps {
+  params: { id: string };
+}
+
+export default function RuleGraphPage({ params }: PageProps) {
   const router = useRouter();
-  const { id } = use(params);
+  const { id } = params;
 
   return (
     <div className="min-h-screen bg-gray-50">
