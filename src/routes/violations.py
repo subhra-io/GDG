@@ -7,9 +7,9 @@ from sqlalchemy import text
 
 from src.core.database import db_manager
 from src.core.logging import get_logger
-from src.models import Violation, ComplianceRule, CompanyRecord
+from src.models import Violation, ComplianceRule, CompanyRecord, ReasoningTrace
 from src.schemas import ViolationResponse, ViolationDetailResponse
-from src.services import ViolationDetector, RuleExtractor, RiskScoringEngine
+from src.services import ViolationDetector, RuleExtractor, RiskScoringEngine, ReasoningTraceGenerator
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/violations", tags=["violations"])
@@ -62,6 +62,7 @@ async def scan_for_violations(db: Session = Depends(get_db)):
         violation_detector = ViolationDetector()
         rule_extractor = RuleExtractor()
         risk_engine = RiskScoringEngine()
+        reasoning_generator = ReasoningTraceGenerator()
         
         violations_created = 0
         
@@ -138,6 +139,23 @@ async def scan_for_violations(db: Session = Depends(get_db)):
                         violation.risk_score = risk_data["score"]
                         violation.risk_level = risk_data["level"]
                         violation.risk_factors = risk_data["factors"]
+                        
+                        # Generate reasoning trace
+                        try:
+                            reasoning_steps = reasoning_generator.generate_trace(
+                                rule.description,
+                                rule.severity.value,
+                                record_data,
+                                violation_result["violation_details"]
+                            )
+                            
+                            reasoning_trace = ReasoningTrace(
+                                violation_id=violation.id,
+                                steps=reasoning_steps
+                            )
+                            db.add(reasoning_trace)
+                        except Exception as e:
+                            logger.warning(f"Failed to generate reasoning trace: {e}")
                         
                         violations_created += 1
         
@@ -270,3 +288,62 @@ async def get_violation_stats(db: Session = Depends(get_db)):
         "by_severity": by_severity,
         "by_status": by_status
     }
+
+
+@router.get("/{violation_id}/reasoning-trace")
+async def get_reasoning_trace(violation_id: str, db: Session = Depends(get_db)):
+    """
+    Get reasoning trace for a violation.
+    
+    Args:
+        violation_id: Violation ID
+        db: Database session
+        
+    Returns:
+        Reasoning trace with steps
+    """
+    trace = db.query(ReasoningTrace).filter(
+        ReasoningTrace.violation_id == violation_id
+    ).first()
+    
+    if not trace:
+        raise HTTPException(status_code=404, detail="Reasoning trace not found")
+    
+    return {
+        "id": str(trace.id),
+        "violation_id": str(trace.violation_id),
+        "steps": trace.steps,
+        "created_at": trace.created_at.isoformat()
+    }
+
+
+@router.get("/{violation_id}/reasoning-trace/export")
+async def export_reasoning_trace(violation_id: str, db: Session = Depends(get_db)):
+    """
+    Export reasoning trace as plain text.
+    
+    Args:
+        violation_id: Violation ID
+        db: Database session
+        
+    Returns:
+        Plain text reasoning trace
+    """
+    from fastapi.responses import PlainTextResponse
+    
+    trace = db.query(ReasoningTrace).filter(
+        ReasoningTrace.violation_id == violation_id
+    ).first()
+    
+    if not trace:
+        raise HTTPException(status_code=404, detail="Reasoning trace not found")
+    
+    reasoning_generator = ReasoningTraceGenerator()
+    text_content = reasoning_generator.format_trace_for_export(trace.steps)
+    
+    return PlainTextResponse(
+        content=text_content,
+        headers={
+            "Content-Disposition": f"attachment; filename=reasoning_trace_{violation_id}.txt"
+        }
+    )
