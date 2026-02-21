@@ -38,6 +38,8 @@ class Settings:
     # LLM Configuration
     openai_api_key: Optional[str] = field(default_factory=lambda: os.getenv("OPENAI_API_KEY"))
     google_api_key: Optional[str] = field(default_factory=lambda: os.getenv("GOOGLE_API_KEY"))
+    llm_provider: str = field(default_factory=lambda: os.getenv("LLM_PROVIDER", "openai"))  # "openai" or "gemini"
+    llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "gpt-4"))
     
     @property
     def postgres_url(self) -> str:

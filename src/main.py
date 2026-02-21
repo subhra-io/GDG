@@ -9,6 +9,7 @@ from src.core import DatabaseManager, setup_logging, get_logger
 from src.core.database import db_manager, Base
 from src.routes import policy_router, violations_router, dashboard_router, data_router
 from src.routes.monitoring import router as monitoring_router
+from src.routes.llm import router as llm_router
 
 # Setup logging
 setup_logging()
@@ -66,6 +67,7 @@ app.include_router(violations_router)
 app.include_router(dashboard_router)
 app.include_router(data_router)
 app.include_router(monitoring_router)
+app.include_router(llm_router)
 
 
 @app.get("/")
