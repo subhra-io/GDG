@@ -16,6 +16,8 @@ class ViolationResponse(BaseModel):
     status: str
     severity: str
     justification: str
+    risk_score: Optional[int] = None
+    risk_level: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -33,6 +35,9 @@ class ViolationDetailResponse(BaseModel):
     justification: str
     record_snapshot: Dict[str, Any]
     remediation_steps: Optional[List[Dict[str, Any]]] = None
+    risk_score: Optional[int] = None
+    risk_level: Optional[str] = None
+    risk_factors: Optional[Dict[str, Any]] = None
     
     class Config:
         from_attributes = True

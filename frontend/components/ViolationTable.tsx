@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import RiskScoreBadge from './RiskScoreBadge';
 
 interface Violation {
   id: string;
@@ -7,6 +8,8 @@ interface Violation {
   detected_at: string;
   status: string;
   record_id: string;
+  risk_score?: number;
+  risk_level?: string;
 }
 
 interface ViolationTableProps {
@@ -43,6 +46,9 @@ export default function ViolationTable({ violations }: ViolationTableProps) {
               Rule
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Risk
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Severity
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -61,6 +67,13 @@ export default function ViolationTable({ violations }: ViolationTableProps) {
             <tr key={violation.id} className="hover:bg-gray-50">
               <td className="px-6 py-4 text-sm text-gray-900">
                 {violation.rule_description}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {violation.risk_score !== undefined && violation.risk_score !== null ? (
+                  <RiskScoreBadge score={violation.risk_score} level={violation.risk_level} size="sm" />
+                ) : (
+                  <span className="text-gray-400 text-xs">N/A</span>
+                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(violation.severity)}`}>

@@ -41,8 +41,15 @@ class Violation(Base):
     severity = Column(String(20), nullable=False)
     remediation_steps = Column(JSONB, nullable=True)
     
+    # Risk scoring fields
+    risk_score = Column(JSONB, nullable=True)  # 0-100
+    risk_level = Column(String(20), nullable=True)  # Low/Medium/High/Critical
+    risk_factors = Column(JSONB, nullable=True)  # Breakdown of risk calculation
+    
     # Relationships
     reviews = relationship("ViolationReview", back_populates="violation", cascade="all, delete-orphan")
+    reasoning_trace = relationship("ReasoningTrace", back_populates="violation", uselist=False, cascade="all, delete-orphan")
+    remediation_progress = relationship("RemediationProgress", back_populates="violation", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Violation(id={self.id}, status={self.status}, severity={self.severity})>"

@@ -9,7 +9,7 @@ from src.core.database import db_manager
 from src.core.logging import get_logger
 from src.models import Violation, ComplianceRule, CompanyRecord
 from src.schemas import ViolationResponse, ViolationDetailResponse
-from src.services import ViolationDetector, RuleExtractor
+from src.services import ViolationDetector, RuleExtractor, RiskScoringEngine
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/violations", tags=["violations"])
@@ -61,6 +61,7 @@ async def scan_for_violations(db: Session = Depends(get_db)):
         # Initialize services
         violation_detector = ViolationDetector()
         rule_extractor = RuleExtractor()
+        risk_engine = RiskScoringEngine()
         
         violations_created = 0
         
@@ -125,6 +126,19 @@ async def scan_for_violations(db: Session = Depends(get_db)):
                         )
                         
                         db.add(violation)
+                        db.flush()  # Get violation ID
+                        
+                        # Calculate risk score
+                        risk_data = risk_engine.calculate_risk_score(
+                            violation,
+                            record_data,
+                            db
+                        )
+                        
+                        violation.risk_score = risk_data["score"]
+                        violation.risk_level = risk_data["level"]
+                        violation.risk_factors = risk_data["factors"]
+                        
                         violations_created += 1
         
         db.commit()
@@ -153,15 +167,21 @@ async def scan_for_violations(db: Session = Depends(get_db)):
 async def list_violations(
     status: Optional[str] = Query(None),
     severity: Optional[str] = Query(None),
+    risk_level: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query("detected_at", regex="^(detected_at|risk_score)$"),
+    order: Optional[str] = Query("desc", regex="^(asc|desc)$"),
     limit: int = Query(100, le=1000),
     db: Session = Depends(get_db)
 ):
     """
-    List violations with optional filters.
+    List violations with optional filters and sorting.
     
     Args:
         status: Filter by status
         severity: Filter by severity
+        risk_level: Filter by risk level (Low/Medium/High/Critical)
+        sort_by: Sort field (detected_at or risk_score)
+        order: Sort order (asc or desc)
         limit: Maximum number of results
         db: Database session
         
@@ -176,9 +196,22 @@ async def list_violations(
     if severity:
         query = query.filter(Violation.severity == severity)
     
-    violations = query.order_by(
-        Violation.detected_at.desc()
-    ).limit(limit).all()
+    if risk_level:
+        query = query.filter(Violation.risk_level == risk_level)
+    
+    # Apply sorting
+    if sort_by == "risk_score":
+        if order == "desc":
+            query = query.order_by(Violation.risk_score.desc().nullslast())
+        else:
+            query = query.order_by(Violation.risk_score.asc().nullsfirst())
+    else:  # detected_at
+        if order == "desc":
+            query = query.order_by(Violation.detected_at.desc())
+        else:
+            query = query.order_by(Violation.detected_at.asc())
+    
+    violations = query.limit(limit).all()
     
     return [ViolationResponse.model_validate(v) for v in violations]
 

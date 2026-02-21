@@ -1,12 +1,13 @@
 """Dashboard and analytics routes."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
+from typing import Optional
 
 from src.core.database import db_manager
 from src.models import Violation, ComplianceRule, CompanyRecord
-from src.services import ViolationDetector
+from src.services import ViolationDetector, RiskScoringEngine
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["dashboard"])
 
@@ -161,4 +162,59 @@ async def get_trends(db: Session = Depends(get_db)):
     return {
         "trends": trends,
         "period": "30_days"
+    }
+
+
+@router.get("/risk-distribution")
+async def get_risk_distribution(db: Session = Depends(get_db)):
+    """
+    Get violation count by risk level.
+    
+    Args:
+        db: Database session
+        
+    Returns:
+        Risk distribution with counts for each level
+    """
+    # Count violations by risk level
+    risk_distribution = {
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "critical": 0
+    }
+    
+    for level in ["Low", "Medium", "High", "Critical"]:
+        count = db.query(Violation).filter(
+            Violation.risk_level == level
+        ).count()
+        risk_distribution[level.lower()] = count
+    
+    return {
+        "distribution": risk_distribution,
+        "total": sum(risk_distribution.values())
+    }
+
+
+@router.get("/risk-trend")
+async def get_risk_trend(
+    days: int = Query(default=30, ge=1, le=90),
+    db: Session = Depends(get_db)
+):
+    """
+    Get risk trend over time.
+    
+    Args:
+        days: Number of days to analyze (1-90)
+        db: Database session
+        
+    Returns:
+        Daily risk trend data
+    """
+    risk_engine = RiskScoringEngine()
+    trend_data = risk_engine.calculate_risk_trend(db, days)
+    
+    return {
+        "trend": trend_data,
+        "period_days": days
     }
