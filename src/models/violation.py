@@ -1,7 +1,7 @@
 """Violation models."""
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Enum as SQLEnum, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 import uuid
@@ -42,7 +42,7 @@ class Violation(Base):
     remediation_steps = Column(JSONB, nullable=True)
     
     # Risk scoring fields
-    risk_score = Column(JSONB, nullable=True)  # 0-100
+    risk_score = Column(Integer, nullable=True)  # 0-100
     risk_level = Column(String(20), nullable=True)  # Low/Medium/High/Critical
     risk_factors = Column(JSONB, nullable=True)  # Breakdown of risk calculation
     
