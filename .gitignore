@@ -64,3 +64,6 @@ next-env.d.ts
 
 # Local documentation (AI-generated, for reference only)
 .local_docs/
+
+# Kiro IDE files
+.kiro/
