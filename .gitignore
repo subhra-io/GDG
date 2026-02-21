@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Environment Variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node.js (Frontend)
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Documentation (too many MD files)
+# Keep essential ones, ignore verbose logs
+*_COMPLETE.md
+*_STATUS.md
+*_SUMMARY.md
+*_GUIDE.md
+*_CHECKLIST.md
+*_SCRIPT.md
+*_READY.md
+*_FIX.md
+*_FIXED.md
+FILES_CREATED.md
+WHATS_NEXT.md
+TEAM_COORDINATION.md
+QUICK_*.md
