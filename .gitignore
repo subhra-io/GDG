@@ -62,18 +62,5 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 
-# Documentation (too many MD files)
-# Keep essential ones, ignore verbose logs
-*_COMPLETE.md
-*_STATUS.md
-*_SUMMARY.md
-*_GUIDE.md
-*_CHECKLIST.md
-*_SCRIPT.md
-*_READY.md
-*_FIX.md
-*_FIXED.md
-FILES_CREATED.md
-WHATS_NEXT.md
-TEAM_COORDINATION.md
-QUICK_*.md
+# Local documentation (AI-generated, for reference only)
+.local_docs/
