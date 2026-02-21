@@ -2,7 +2,7 @@
 
 PolicySentinel is an autonomous compliance agent that transforms unstructured PDF policies into executable rule graphs and continuously enforces them across enterprise databases using AI.
 
-## 🚀 Features
+##  Features
 
 - **AI-Powered Rule Extraction**: Automatically extract compliance rules from PDF policy documents using GPT-4
 - **Intelligent Violation Detection**: Scan database records against extracted rules to identify violations
@@ -11,7 +11,7 @@ PolicySentinel is an autonomous compliance agent that transforms unstructured PD
 - **Multi-Database Support**: Works with PostgreSQL, MongoDB, and more
 - **RESTful API**: Complete API for integration with existing systems
 
-## 📋 Prerequisites
+##  Prerequisites
 
 - Python 3.11+
 - PostgreSQL 14+
@@ -19,7 +19,7 @@ PolicySentinel is an autonomous compliance agent that transforms unstructured PD
 - Redis 7+
 - OpenAI API Key (for AI features)
 
-## 🛠️ Installation
+##  Installation
 
 ### 1. Clone the Repository
 
@@ -170,7 +170,7 @@ Each violation includes:
 - AI-generated justification
 - Suggested remediation steps
 
-## 📚 API Endpoints
+##  API Endpoints
 
 ### Policies
 
@@ -221,7 +221,7 @@ policysentinel/
 └── README.md
 ```
 
-## 🧪 Testing
+##  Testing
 
 Run the test suite:
 
@@ -236,7 +236,7 @@ pytest tests/test_config.py -v
 pytest tests/test_logging.py -v
 ```
 
-## 🔧 Development
+##  Development
 
 ### Adding New Rules
 
@@ -272,7 +272,7 @@ The demo includes 20 sample financial transactions with varying amounts:
 
 Some transactions are designed to violate the sample AML policy rules.
 
-## 🚀 Deployment
+##  Deployment
 
 ### Docker (Coming Soon)
 
@@ -291,15 +291,15 @@ docker-compose up
 gunicorn src.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
 ```
 
-## 🤝 Contributing
+##  Contributing
 
 This is a hackathon project for GDG DevFest 2026.
 
-## 📝 License
+##  License
 
 Copyright © 2026 PolicySentinel Team
 
-## 🎓 Hackathon Context
+##  Hackathon Context
 
 Built for **GDG DevFest 2026 - Round 3: Coding Phase**
 
@@ -310,11 +310,6 @@ Built for **GDG DevFest 2026 - Round 3: Coding Phase**
 - AI: OpenAI GPT-4, LangChain
 - Infrastructure: Redis, MongoDB, Celery
 - Frontend: Next.js (separate repository)
-
-## 📞 Support
-
-For questions or issues, please contact the development team.
-
 ---
 
-**Made with ❤️ for GDG DevFest 2026**
+** Made with ❤️ **
