@@ -47,13 +47,22 @@ async def get_dashboard_metrics(db: Session = Depends(get_db)):
     # Total records
     total_records = db.query(CompanyRecord).count()
     
-    # Calculate risk score
-    violations = db.query(Violation).all()
+    # Calculate risk score efficiently using aggregation
     violation_detector = ViolationDetector()
-    violations_data = [
-        {"severity": v.severity}
-        for v in violations
-    ]
+    
+    # Get severity counts directly from database
+    severity_counts = {}
+    for severity in ["critical", "high", "medium", "low"]:
+        count = db.query(Violation).filter(
+            Violation.severity == severity
+        ).count()
+        severity_counts[severity] = count
+    
+    # Calculate risk score from counts
+    violations_data = []
+    for severity, count in severity_counts.items():
+        violations_data.extend([{"severity": severity}] * count)
+    
     risk_score = violation_detector.calculate_risk_score(violations_data)
     
     # Violations by severity
@@ -85,17 +94,7 @@ async def get_risk_score(db: Session = Depends(get_db)):
     Returns:
         Risk score and breakdown
     """
-    violations = db.query(Violation).all()
-    
-    violation_detector = ViolationDetector()
-    violations_data = [
-        {"severity": v.severity}
-        for v in violations
-    ]
-    
-    score = violation_detector.calculate_risk_score(violations_data)
-    
-    # Count by severity
+    # Count by severity efficiently
     severity_breakdown = {
         "critical": 0,
         "high": 0,
@@ -103,13 +102,24 @@ async def get_risk_score(db: Session = Depends(get_db)):
         "low": 0
     }
     
-    for v in violations:
-        if v.severity in severity_breakdown:
-            severity_breakdown[v.severity] += 1
+    for severity in severity_breakdown.keys():
+        severity_breakdown[severity] = db.query(Violation).filter(
+            Violation.severity == severity
+        ).count()
+    
+    total_violations = sum(severity_breakdown.values())
+    
+    # Calculate risk score from counts
+    violation_detector = ViolationDetector()
+    violations_data = []
+    for severity, count in severity_breakdown.items():
+        violations_data.extend([{"severity": severity}] * count)
+    
+    score = violation_detector.calculate_risk_score(violations_data)
     
     return {
         "score": score,
-        "total_violations": len(violations),
+        "total_violations": total_violations,
         "severity_breakdown": severity_breakdown,
         "status": "healthy" if score >= 80 else "at_risk" if score >= 60 else "critical"
     }
