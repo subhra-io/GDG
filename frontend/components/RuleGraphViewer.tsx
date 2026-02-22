@@ -587,50 +587,86 @@ function RuleGraphViewerInner({ policyId }: RuleGraphViewerProps) {
       </div>
 
       {/* Conflicts List */}
-      {conflicts.length > 0 && (
+      {showConflicts && (
         <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="font-semibold text-gray-900 mb-3">Detected Conflicts ({conflicts.length})</h3>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {conflicts.map((conflict, idx) => (
-              <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-red-900">
-                      {conflict.conflict_type === 'explicit' ? 'Explicit Conflict' : 'Potential Conflict'}
-                    </p>
-                    <p className="text-xs text-red-700 mt-1">
-                      Rule 1: {conflict.rule1_description.substring(0, 60)}...
-                    </p>
-                    <p className="text-xs text-red-700">
-                      Rule 2: {conflict.rule2_description.substring(0, 60)}...
-                    </p>
-                    {conflict.description && (
-                      <p className="text-xs text-red-600 mt-1 italic">{conflict.description}</p>
-                    )}
+          <h3 className="font-semibold text-gray-900 mb-3">
+            Detected Conflicts {conflicts.length > 0 ? `(${conflicts.length})` : ''}
+          </h3>
+          {conflicts.length > 0 ? (
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {conflicts.map((conflict, idx) => (
+                <div key={idx} className="bg-red-50 border border-red-200 rounded p-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-900">
+                        {conflict.conflict_type === 'explicit' ? 'Explicit Conflict' : 'Potential Conflict'}
+                      </p>
+                      <p className="text-xs text-red-700 mt-1">
+                        Rule 1: {conflict.rule1_description.substring(0, 60)}...
+                      </p>
+                      <p className="text-xs text-red-700">
+                        Rule 2: {conflict.rule2_description.substring(0, 60)}...
+                      </p>
+                      {conflict.description && (
+                        <p className="text-xs text-red-600 mt-1 italic">{conflict.description}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-green-50 border border-green-200 rounded p-4">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-green-900">No Rule Conflicts Detected</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    All rules are compatible with each other. No conflicting conditions found.
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Cycles List */}
-      {cycles.length > 0 && (
+      {showCycles && (
         <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="font-semibold text-gray-900 mb-3">Circular Dependencies ({cycles.length})</h3>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {cycles.map((cycle, idx) => (
-              <div key={idx} className="bg-orange-50 border border-orange-200 rounded p-3">
-                <p className="text-sm font-medium text-orange-900">
-                  Cycle {idx + 1}: {cycle.length} rules involved
-                </p>
-                <p className="text-xs text-orange-700 mt-1">
-                  This creates a circular dependency that may cause issues
-                </p>
+          <h3 className="font-semibold text-gray-900 mb-3">
+            Circular Dependencies {cycles.length > 0 ? `(${cycles.length})` : ''}
+          </h3>
+          {cycles.length > 0 ? (
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {cycles.map((cycle, idx) => (
+                <div key={idx} className="bg-orange-50 border border-orange-200 rounded p-3">
+                  <p className="text-sm font-medium text-orange-900">
+                    Cycle {idx + 1}: {cycle.length} rules involved
+                  </p>
+                  <p className="text-xs text-orange-700 mt-1">
+                    This creates a circular dependency that may cause issues
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-green-50 border border-green-200 rounded p-4">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-green-900">No Circular Dependencies Detected</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    All rule dependencies form a valid directed acyclic graph (DAG). This is good for system stability.
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>

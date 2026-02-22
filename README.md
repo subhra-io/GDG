@@ -1,315 +1,273 @@
-# PolicySentinel - AI-Powered Compliance Monitoring Platform
+# PolicySentinel
 
-PolicySentinel is an autonomous compliance agent that transforms unstructured PDF policies into executable rule graphs and continuously enforces them across enterprise databases using AI.
+AI-powered compliance monitoring platform for automated policy interpretation, violation detection, and risk management.
 
-##  Features
+## Features
 
-- **AI-Powered Rule Extraction**: Automatically extract compliance rules from PDF policy documents using GPT-4
-- **Intelligent Violation Detection**: Scan database records against extracted rules to identify violations
-- **Explainable AI**: Generate human-readable justifications and remediation steps for each violation
-- **Real-time Dashboard**: Monitor compliance scores, violations, and trends
-- **Multi-Database Support**: Works with PostgreSQL, MongoDB, and more
-- **RESTful API**: Complete API for integration with existing systems
+- **Automated Rule Extraction**: Extract compliance rules from policy documents using LLM
+- **Interactive Rule Graphs**: Visualize rule relationships with conflict and cycle detection
+- **Violation Detection**: Automated monitoring and detection with AI-powered reasoning
+- **Predictive Analytics**: ML-based risk predictions with what-if scenario testing
+- **Human Review Workflow**: Complete governance layer with review queue and assignments
+- **Multi-Channel Alerts**: Email, Slack, and in-app notifications
+- **Audit Trail**: Automatic logging of all system activities
+- **Feedback Loop**: Continuous learning from human corrections
 
-##  Prerequisites
+## Tech Stack
+
+### Backend
+- Python 3.11+
+- FastAPI
+- PostgreSQL
+- MongoDB
+- Redis
+- Celery
+- SQLAlchemy
+- OpenAI / Google Gemini
+
+### Frontend
+- Next.js 14
+- React 18
+- TypeScript
+- Tailwind CSS
+- D3.js
+
+## Prerequisites
 
 - Python 3.11+
+- Node.js 18+
 - PostgreSQL 14+
 - MongoDB 6+
 - Redis 7+
-- OpenAI API Key (for AI features)
 
-##  Installation
+## Installation
 
-### 1. Clone the Repository
-
-```bash
-git clone <repository-url>
-cd policysentinel
-```
-
-### 2. Create Virtual Environment
+### Backend Setup
 
 ```bash
-python3 -m venv venv
+# Create virtual environment
+python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
 
-### 3. Install Dependencies
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-### 4. Configure Environment
-
-```bash
+# Configure environment
 cp .env.example .env
+# Edit .env with your database credentials and API keys
+
+# Run database migrations
+python scripts/migrate_rule_graph.py
+python scripts/migrate_overnight_features.py
+python scripts/migrate_reviews.py
+python scripts/migrate_alerts.py
+python scripts/migrate_audit.py
+python scripts/migrate_feedback_loop.py
+
+# Start backend server
+uvicorn src.main:app --reload --port 8000
 ```
 
-Edit `.env` and add your configuration:
-- Database credentials
-- OpenAI API key (required for AI features)
-- Other settings as needed
-
-### 5. Setup Databases
-
-Make sure PostgreSQL, MongoDB, and Redis are running:
+### Frontend Setup
 
 ```bash
-# PostgreSQL
-createdb policysentinel
+cd frontend
 
-# MongoDB - should be running on default port 27017
+# Install dependencies
+npm install
 
-# Redis - should be running on default port 6379
+# Start development server
+npm run dev
 ```
 
-### 6. Initialize Demo Environment
+### Load Sample Data
 
 ```bash
-python scripts/setup_demo.py
-```
+# Load IBM AML dataset
+python scripts/load_ibm_dataset.py
 
-This will:
-- Create database tables
-- Load 20 sample financial transaction records
-- Prepare the system for testing
-
-## 🎯 Quick Start
-
-### 1. Start the Server
-
-```bash
-python src/main.py
-```
-
-The API will be available at `http://localhost:8000`
-
-API Documentation:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-### 2. Create a Sample Policy PDF
-
-```bash
-pip install reportlab  # If not already installed
+# Create sample policy
 python scripts/create_sample_policy.py
 ```
 
-This creates `sample_aml_policy.pdf` with 4 testable AML compliance rules.
+## Configuration
 
-### 3. Test the Complete Flow
+### Environment Variables
 
-#### Step 1: Upload Policy Document
+Create a `.env` file with the following variables:
+
+```env
+# Database
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=policysentinel
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
+
+MONGODB_HOST=localhost
+MONGODB_PORT=27017
+MONGODB_DB=policysentinel_audit
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+
+# LLM API Keys
+OPENAI_API_KEY=your_openai_key
+GOOGLE_API_KEY=your_google_key
+LLM_PROVIDER=openai  # or gemini
+
+# Email (optional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email
+SMTP_PASSWORD=your_password
+EMAIL_ENABLED=false
+
+# Slack (optional)
+SLACK_WEBHOOK_URL=your_webhook_url
+SLACK_ENABLED=false
+```
+
+## Usage
+
+### Starting the Application
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/policies/upload" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@sample_aml_policy.pdf"
+# Terminal 1: Backend
+source venv/bin/activate
+uvicorn src.main:app --reload --port 8000
+
+# Terminal 2: Frontend
+cd frontend
+npm run dev
+
+# Terminal 3: Celery Worker (optional)
+celery -A src.workers.tasks worker --loglevel=info
 ```
 
-Response:
-```json
-{
-  "policy_id": "uuid-here",
-  "filename": "sample_aml_policy.pdf",
-  "status": "processed",
-  "message": "Policy uploaded and processed successfully"
-}
-```
+### Accessing the Application
 
-#### Step 2: Extract Rules Using AI
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
 
-```bash
-curl -X POST "http://localhost:8000/api/v1/policies/{policy_id}/extract-rules"
-```
+## API Endpoints
 
-This uses GPT-4 to extract structured compliance rules from the policy text.
-
-#### Step 3: Scan for Violations
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/violations/scan"
-```
-
-This scans all company records against the extracted rules and creates violation records.
-
-#### Step 4: View Dashboard Metrics
-
-```bash
-curl "http://localhost:8000/api/v1/dashboard/metrics"
-```
-
-Response:
-```json
-{
-  "total_violations": 5,
-  "active_violations": 5,
-  "total_rules": 4,
-  "total_records": 20,
-  "compliance_score": 75,
-  "violations_by_severity": {
-    "critical": 1,
-    "high": 3,
-    "medium": 1,
-    "low": 0
-  }
-}
-```
-
-#### Step 5: View Violation Details
-
-```bash
-curl "http://localhost:8000/api/v1/violations"
-```
-
-Each violation includes:
-- Rule that was violated
-- Record that violated it
-- AI-generated justification
-- Suggested remediation steps
-
-##  API Endpoints
-
-### Policies
-
-- `POST /api/v1/policies/upload` - Upload policy PDF
-- `GET /api/v1/policies` - List all policies
-- `GET /api/v1/policies/{id}` - Get policy details
-- `POST /api/v1/policies/{id}/extract-rules` - Extract rules using AI
-- `GET /api/v1/policies/{id}/rules` - Get rules for a policy
+### Policy Management
+- `POST /api/v1/policy/upload` - Upload policy document
+- `GET /api/v1/policy/documents` - List all policies
+- `POST /api/v1/policy/extract-rules` - Extract rules from policy
 
 ### Violations
-
-- `POST /api/v1/violations/scan` - Scan for violations
-- `GET /api/v1/violations` - List violations (with filters)
+- `GET /api/v1/violations` - List violations
 - `GET /api/v1/violations/{id}` - Get violation details
-- `GET /api/v1/violations/stats/summary` - Get violation statistics
+- `GET /api/v1/violations/{id}/reasoning` - Get AI reasoning
 
-### Dashboard
+### Predictions
+- `POST /api/v1/predictions/predict` - Predict violation risk
+- `POST /api/v1/predictions/what-if` - Run what-if scenario
+- `GET /api/v1/predictions/high-risk` - Get high-risk records
 
-- `GET /api/v1/dashboard/metrics` - Get key metrics
-- `GET /api/v1/dashboard/risk-score` - Get compliance risk score
-- `GET /api/v1/dashboard/trends` - Get violation trends
+### Reviews
+- `GET /api/v1/reviews/queue` - Get review queue
+- `POST /api/v1/reviews/{violation_id}` - Submit review
+- `PUT /api/v1/reviews/{violation_id}/assign` - Assign reviewer
 
-### Health
+### Alerts & Notifications
+- `GET /api/v1/notifications/{user_id}` - Get user notifications
+- `POST /api/v1/alerts/rules` - Create alert rule
+- `GET /api/v1/alerts/history` - Get alert history
 
-- `GET /health` - System health check
-- `GET /` - API information
+### Audit & Feedback
+- `GET /api/v1/audit/logs` - Get audit logs
+- `GET /api/v1/feedback/metrics` - Get AI accuracy metrics
+- `GET /api/v1/feedback/suggestions` - Get improvement suggestions
 
-## 🏗️ Project Structure
+## Architecture
 
 ```
-policysentinel/
-├── src/
-│   ├── config/          # Configuration management
-│   ├── core/            # Core infrastructure (database, logging)
-│   ├── models/          # SQLAlchemy database models
-│   ├── schemas/         # Pydantic API schemas
-│   ├── services/        # Business logic services
-│   │   ├── pdf_extractor.py      # PDF text extraction
-│   │   ├── rule_extractor.py     # AI rule extraction
-│   │   └── violation_detector.py # Violation detection
-│   ├── routes/          # FastAPI route handlers
-│   ├── utils/           # Utility functions
-│   └── main.py          # Application entry point
-├── scripts/             # Setup and utility scripts
-├── tests/               # Test suite
-├── requirements.txt     # Python dependencies
-├── .env.example         # Environment variables template
-└── README.md
+┌─────────────────────────────────────────┐
+│           PolicySentinel                │
+├─────────────────────────────────────────┤
+│                                         │
+│  INPUT LAYER                            │
+│  ├── Policy PDFs                        │
+│  └── Database Records                   │
+│                                         │
+│  AI COMPLIANCE ENGINE                   │
+│  ├── Rule Extraction (LLM)             │
+│  ├── Rule Graph Engine                  │
+│  ├── Violation Detection                │
+│  ├── Risk Prediction (ML)               │
+│  └── Monitoring Agent                   │
+│                                         │
+│  GOVERNANCE LAYER                       │
+│  ├── Explainability Engine              │
+│  ├── Human Review Interface             │
+│  └── Feedback Loop                      │
+│                                         │
+│  OUTPUT LAYER                           │
+│  ├── Dashboard                          │
+│  ├── Alerts & Notifications             │
+│  ├── Audit Trail                        │
+│  └── Reports                            │
+│                                         │
+└─────────────────────────────────────────┘
 ```
 
-##  Testing
+## Development
 
-Run the test suite:
+### Running Tests
 
 ```bash
-pytest tests/ -v
+# Backend tests
+pytest
+
+# Frontend tests
+cd frontend
+npm test
 ```
 
-Run specific tests:
+### Code Style
 
 ```bash
-pytest tests/test_config.py -v
-pytest tests/test_logging.py -v
+# Python
+black src/
+flake8 src/
+
+# TypeScript
+cd frontend
+npm run lint
 ```
 
-##  Development
+## Deployment
 
-### Adding New Rules
-
-Rules are extracted automatically from policy PDFs using AI. The system supports:
-
-- Numeric comparisons (>, <, =)
-- String matching (contains, equals)
-- Regex patterns
-- Null checks
-- Complex AND/OR logic
-
-### Adding New Data Sources
-
-To monitor different types of records:
-
-1. Create a new model in `src/models/`
-2. Add validation logic in `src/services/violation_detector.py`
-3. Update the scan endpoint to include your data source
-
-### Customizing AI Prompts
-
-Edit the prompts in `src/services/rule_extractor.py`:
-- `_build_extraction_prompt()` - Rule extraction
-- `generate_justification()` - Violation explanations
-- `generate_remediation_steps()` - Fix suggestions
-
-## 📊 Sample Data
-
-The demo includes 20 sample financial transactions with varying amounts:
-- Normal transactions: $100 - $5,000
-- High-value transactions: $10,000 - $50,000
-- Very high transactions: $100,000 - $500,000
-
-Some transactions are designed to violate the sample AML policy rules.
-
-##  Deployment
-
-### Docker (Coming Soon)
+### Docker Deployment
 
 ```bash
-docker-compose up
+# Build and run with Docker Compose
+docker-compose up -d
 ```
 
-### Manual Deployment
+### Production Considerations
 
-1. Set up production databases
-2. Configure environment variables
-3. Run database migrations
-4. Start the application with a production WSGI server
+- Use environment-specific configuration
+- Enable SSL/TLS for API endpoints
+- Configure proper database backups
+- Set up monitoring and logging
+- Use production-grade WSGI server (Gunicorn)
+- Enable rate limiting
+- Configure CORS properly
 
-```bash
-gunicorn src.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
-```
+## License
 
-##  Contributing
+MIT License
 
-This is a hackathon project for GDG DevFest 2026.
+## Contributing
 
-##  License
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Copyright © 2026 PolicySentinel Team
+## Support
 
-##  Hackathon Context
-
-Built for **GDG DevFest 2026 - Round 3: Coding Phase**
-
-**Problem Statement**: Data Policy Compliance Agent
-
-**Tech Stack**:
-- Backend: FastAPI, SQLAlchemy, PostgreSQL
-- AI: OpenAI GPT-4, LangChain
-- Infrastructure: Redis, MongoDB, Celery
-- Frontend: Next.js (separate repository)
----
-
-** Made with ❤️ **
+For issues and questions, please open an issue on GitHub.

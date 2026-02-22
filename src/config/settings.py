@@ -41,6 +41,18 @@ class Settings:
     llm_provider: str = field(default_factory=lambda: os.getenv("LLM_PROVIDER", "openai"))  # "openai" or "gemini"
     llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "gpt-4"))
     
+    # Email Configuration
+    SMTP_HOST: str = field(default_factory=lambda: os.getenv("SMTP_HOST", "smtp.gmail.com"))
+    SMTP_PORT: int = field(default_factory=lambda: int(os.getenv("SMTP_PORT", "587")))
+    SMTP_USER: Optional[str] = field(default_factory=lambda: os.getenv("SMTP_USER"))
+    SMTP_PASSWORD: Optional[str] = field(default_factory=lambda: os.getenv("SMTP_PASSWORD"))
+    FROM_EMAIL: str = field(default_factory=lambda: os.getenv("FROM_EMAIL", "noreply@policysentinel.com"))
+    EMAIL_ENABLED: bool = field(default_factory=lambda: os.getenv("EMAIL_ENABLED", "false").lower() == "true")
+    
+    # Slack Configuration
+    SLACK_WEBHOOK_URL: Optional[str] = field(default_factory=lambda: os.getenv("SLACK_WEBHOOK_URL"))
+    SLACK_ENABLED: bool = field(default_factory=lambda: os.getenv("SLACK_ENABLED", "false").lower() == "true")
+    
     @property
     def postgres_url(self) -> str:
         """Get PostgreSQL connection URL."""

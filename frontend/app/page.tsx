@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getDashboardMetrics, scanViolations } from '@/lib/api';
 import MetricCard from '@/components/MetricCard';
 import ComplianceGauge from '@/components/ComplianceGauge';
+import PredictionWidget from '@/components/PredictionWidget';
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<any>(null);
@@ -156,6 +157,9 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Predictive Risk Analysis Widget */}
+        <PredictionWidget />
 
         {/* AI Features Showcase */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow p-6 border border-blue-200">

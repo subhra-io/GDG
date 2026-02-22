@@ -11,6 +11,13 @@ from src.routes import policy_router, violations_router, dashboard_router, data_
 from src.routes.monitoring import router as monitoring_router
 from src.routes.llm import router as llm_router
 from src.routes.rule_graph import router as rule_graph_router
+from src.routes.predictions import router as predictions_router
+from src.routes.reviews import router as reviews_router
+from src.routes.alerts import router as alerts_router
+from src.routes.notifications import router as notifications_router
+from src.routes.audit import router as audit_router
+from src.routes.feedback import router as feedback_router
+from src.middleware.audit_logger import AuditLoggerMiddleware
 
 # Setup logging
 setup_logging()
@@ -62,6 +69,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add audit logging middleware
+app.add_middleware(AuditLoggerMiddleware)
+
 # Include routers
 app.include_router(policy_router)
 app.include_router(violations_router)
@@ -70,6 +80,12 @@ app.include_router(data_router)
 app.include_router(monitoring_router)
 app.include_router(llm_router)
 app.include_router(rule_graph_router)
+app.include_router(predictions_router)
+app.include_router(reviews_router)
+app.include_router(alerts_router)
+app.include_router(notifications_router)
+app.include_router(audit_router)
+app.include_router(feedback_router)
 
 
 @app.get("/")

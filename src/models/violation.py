@@ -46,6 +46,10 @@ class Violation(Base):
     risk_level = Column(String(20), nullable=True)  # Low/Medium/High/Critical
     risk_factors = Column(JSONB, nullable=True)  # Breakdown of risk calculation
     
+    # Review workflow fields
+    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    is_false_positive = Column(String(10), nullable=True, default="false")  # Using string for SQLite compatibility
+    
     # Relationships
     reviews = relationship("ViolationReview", back_populates="violation", cascade="all, delete-orphan")
     reasoning_trace = relationship("ReasoningTrace", back_populates="violation", uselist=False, cascade="all, delete-orphan")

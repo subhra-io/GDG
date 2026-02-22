@@ -19,14 +19,11 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Virtual Environment
 venv/
-env/
 ENV/
-.venv
+env/
 
-# Environment Variables
+# Environment variables
 .env
 .env.local
 
@@ -37,11 +34,9 @@ ENV/
 *.swo
 *~
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
+# OS
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
@@ -50,20 +45,82 @@ logs/
 # Database
 *.db
 *.sqlite
+*.sqlite3
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Node.js (Frontend)
+# Node.js / Frontend
 node_modules/
 .next/
 out/
+.cache/
 *.tsbuildinfo
-next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Local documentation (AI-generated, for reference only)
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation and Planning Files (EXCLUDE FROM GIT)
+DAY_*.md
+DEMO_*.md
+FINAL_*.md
+OVERNIGHT_*.md
+ROUND_*.md
+PROGRESS_*.md
+QUICK_*.md
+ISSUES_*.md
+TEST_*.md
+FRONTEND_*.md
+GRAPH_*.md
+BACKGROUND_*.md
+CELERY_*.md
+MENTORSHIP_*.md
+PUSH_*.md
+START_*.md
+EXECUTIVE_*.md
+ARCHITECTURE_COMPARISON.md
+ARCHITECTURE_DIAGRAM.md
+BASIC_FLOW_DIAGRAM.md
+PROMPTS_SUMMARY.md
+API_TESTING_GUIDE.md
+QUICKSTART.md
+PANEL_PRESENTATION_*.md
+PRESENTATION_*.md
+
+# Local documentation folder
 .local_docs/
 
-# Kiro IDE files
+# Kiro AI assistant files
 .kiro/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Redis
+dump.rdb
+
+# MongoDB
+*.bson
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Test files
+test_*.py
+*_test.py
